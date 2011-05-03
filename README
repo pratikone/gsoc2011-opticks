@@ -1,0 +1,16 @@
+#######################################
+Pratik Anand
+pratik[dot]preet[at]gmail[dot]com
+pratik[at]pratikanand[dot]com
+nick:pratikone
+#######################################
+
+
+Photography Processing Tools for Opticks in Google Summer of Code 2011
+------------------------------------------------------------------------
+
+It includes creating plugins for various post processing operations on images like 
+white reduction, noise reduction, demosaicing, color translation, HDR processing using a variety 
+of algorithms.
+The full application can be read here :
+http://www.google-melange.com/gsoc/proposal/review/google/gsoc2011/pratikone/1
