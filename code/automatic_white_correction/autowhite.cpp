@@ -103,6 +103,8 @@ double testfunc(RasterElement *pRaster,int i)
    double pixelVal,max=0;
 
    DataAccessor thirdBandDa = pRaster->getDataAccessor(pRequest.release());
+   
+
 
    for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
 
@@ -156,35 +158,24 @@ void copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pPr
 
    
    
-
+   VERIFYNRV(thirdBandDa.isValid());
+   VERIFYNRV(pDestAcc.isValid());
    
 
    for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
 
    {
-
-      for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
-
+	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
 	  {	  
-		  
-		  switchOnEncoding(pDesc->getDataType(), copywhite, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
-            pDesc->getRowCount(), pDesc->getColumnCount(),correct);
-		 
-		 
-
-		  
-		  pDestAcc->nextColumn();
+		switchOnEncoding(pDesc->getDataType(), copywhite, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
+        pDesc->getRowCount(), pDesc->getColumnCount(),correct);
+		pDestAcc->nextColumn();
 	  }
-
-     
+	        
 	  pDestAcc->nextRow();
 
    }
 
-
-
-   
-   
 }
 
 
@@ -290,6 +281,8 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    pProgress->updateProgress(msg,100,NORMAL);						//final R,G and B values
 
    //create window
+   if(!isBatch())
+   {
     Service<DesktopServices> pDesktop;
 
     SpatialDataWindow* pWindow = static_cast<SpatialDataWindow*>(pDesktop->createWindow(pResultCube->getName(),
@@ -307,10 +300,13 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
          return false;
       }
 
+	
+   
+
       pView->setPrimaryRasterElement(pResultCube.get());
       pView->createLayer(RASTER, pResultCube.get());
    
-
+  }
    pOutArgList->setPlugInArgValue("autowhite_Result", pResultCube.release());  //for saving data
 
    pStep->finalize();
