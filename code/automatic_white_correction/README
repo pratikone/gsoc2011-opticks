@@ -1,0 +1,30 @@
+#######################################
+Pratik Anand
+pratik[dot]preet[at]gmail[dot]com
+pratik[at]pratikanand[dot]com
+nick:pratikone
+#######################################
+
+Automatic White Correction
+----------------------------
+Automatic white correction on images (both 8-bit and 16-bit).
+
+Algorithm
+image pixel with max value P(r+g+b)
+
+if the image is 16-bit
+
+then for every RED, GREEN and BLUE band of image
+old=P(band)
+new=(65535)*old/new
+P(band)=new
+
+
+if the image is 8-bit
+
+then for every RED, GREEN and BLUE band of image
+old=P(band)
+new=(255)*old/new
+P(band)=new
+
+The resultant image as correct white balancing of pixels.
