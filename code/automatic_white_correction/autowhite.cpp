@@ -61,13 +61,13 @@ autowhite::autowhite()
    setName("autowhite");
    setDescription("Auto white balance on an image");
    setCreator("Pratik Anand");
-   setVersion("Sample");
-   setCopyright("Copyright (C) 2008, Ball Aerospace & Technologies Corp.");
+   setVersion("0.1");
+   setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
    setProductionStatus(false);
-   setType("Sample");
-   setSubtype("Statistics");
-   setMenuLocation("[Tutorial]/autowhite");
-   setAbortSupported(true);
+   setType("Algorithm");
+   setSubtype("White Balance");
+   setMenuLocation("[Photography]/autowhite");
+   setAbortSupported(false);
 }
 
 autowhite::~autowhite()
@@ -78,7 +78,7 @@ bool autowhite::getInputSpecification(PlugInArgList* &pInArgList)
 {
    VERIFY(pInArgList = Service<PlugInManagerServices>()->getPlugInArgList());
    pInArgList->addArg<Progress>(Executable::ProgressArg(), NULL, "Progress reporter");
-   pInArgList->addArg<RasterElement>(Executable::DataElementArg(), "Generate statistics for this raster element");
+   pInArgList->addArg<RasterElement>(Executable::DataElementArg(), "White balance correction for an image");
    return true;
 }
 
@@ -91,7 +91,7 @@ bool autowhite::getOutputSpecification(PlugInArgList*& pOutArgList)
 
 
 
-double testfunc(RasterElement *pRaster,int i)
+double maxBandValue(RasterElement *pRaster,int i)
 {
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
 	DimensionDescriptor thirdBand = pDesc->getActiveBand(i);
@@ -167,6 +167,7 @@ void copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pPr
    {
 	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
 	  {	  
+		
 		switchOnEncoding(pDesc->getDataType(), copywhite, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
         pDesc->getRowCount(), pDesc->getColumnCount(),correct);
 		pDestAcc->nextColumn();
@@ -190,13 +191,16 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 {
    
 	
-	StepResource pStep("autowhite", "pratik", "27170298-10CE-4E6C-AD7A-97E8058C29FF");
+   StepResource pStep("autowhite", "pratik", "27170298-10CE-4E6C-AD7A-97E8058C29FF");
    if (pInArgList == NULL || pOutArgList == NULL)
    {
       return false;
    }
+
    Progress* pProgress = pInArgList->getPlugInArgValue<Progress>(Executable::ProgressArg());
+   
    RasterElement* pCube = pInArgList->getPlugInArgValue<RasterElement>(Executable::DataElementArg());  //pCube
+   
    if (pCube == NULL)
    {
       std::string msg = "A raster cube must be specified.";
@@ -208,38 +212,40 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 
       return false;
    }
+   
+   pProgress->updateProgress("Starting calculations", 10, NORMAL);
    RasterDataDescriptor* pDesc = static_cast<RasterDataDescriptor*>(pCube->getDataDescriptor());
    VERIFY(pDesc != NULL);
 
    
-   double max0=testfunc(pCube,0);
-   double max1=testfunc(pCube,1);
-   double max2=testfunc(pCube,2);
+   double max0=maxBandValue(pCube,0);									//Max RED value
+   double max1=maxBandValue(pCube,1);									//Max GREEN value
+   double max2=maxBandValue(pCube,2);									//Max BLUE value
 
    std::string msg="Old values: RED Band 0:"+StringUtilities::toDisplayString(max0)+"\n"
 				  +"GREEN Band 1:"+StringUtilities::toDisplayString(max1)+"\n"
 				  +"BLUE Band 2:"+StringUtilities::toDisplayString(max2)+"\n";
    
-   pProgress->updateProgress(msg,100,NORMAL);							//initial R,G and B values
+   pProgress->updateProgress(msg,20,NORMAL);							//show initial R,G and B values
 
   
    //auto white correction
    double correct[3];
-   if(max0>255||max1>255||max2>255)    //if image is 16-bit
+   if(max0>255||max1>255||max2>255)										//if image is 16-bit
    {
-	 correct[0]= (65535/max0);
+	correct[0]= (65535/max0);
     correct[1]= (65535/max1);
     correct[2]= (65535/max2);
 
    }
    else
-   {								   //if image is 8-bit
+   {																	//if image is 8-bit
 	correct[0]= (255/max0);
     correct[1]= (255/max1);
     correct[2]= (255/max2);
    }
 
-   RasterElement *dRas=RasterUtilities::createRasterElement("RGB"+pCube->getName(),
+   RasterElement *dRas=RasterUtilities::createRasterElement(pCube->getName()+"RGB",
       pDesc->getRowCount(), pDesc->getColumnCount(),3, pDesc->getDataType(),BSQ);
 
    
@@ -259,9 +265,10 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    pProgress->updateProgress(msg+"BLUE complete", 80, NORMAL);
 
 
+
    //new model resource
    RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRas->getDataDescriptor());
-   rDesc->setDisplayMode(RGB_MODE);							//enable color mode
+   rDesc->setDisplayMode(RGB_MODE);										//enable color mode
    rDesc->setDisplayBand(RED,pDesc->getActiveBand(0));
    rDesc->setDisplayBand(GREEN,pDesc->getActiveBand(1));
    rDesc->setDisplayBand(BLUE,pDesc->getActiveBand(2));
@@ -272,15 +279,18 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    
    //new statistics
    
-   max0=testfunc(dRas,0);
-   max1=testfunc(dRas,1);
-   max2=testfunc(dRas,2);
+   max0=maxBandValue(dRas,0);											//Max RED value
+   max1=maxBandValue(dRas,1);											//Max GREEN value
+   max2=maxBandValue(dRas,2);											//Max BLUE value
+
    msg="New values:  RED Band 0:"+StringUtilities::toDisplayString(max0)+"\n"
 				  +"GREEN Band 1:"+StringUtilities::toDisplayString(max1)+"\n"
 				  +"BLUE Band 2:"+StringUtilities::toDisplayString(max2);
-   pProgress->updateProgress(msg,100,NORMAL);						//final R,G and B values
+   
+   pProgress->updateProgress(msg,100,NORMAL);							//show final R,G and B values
 
    //create window
+
    if(!isBatch())
    {
     Service<DesktopServices> pDesktop;
