@@ -30,6 +30,8 @@
 #include "autowhite.h"
 #include <limits>
 
+#include <windows.h>
+
 REGISTER_PLUGIN_BASIC(OpticksTutorial, autowhite);
 
 
@@ -57,7 +59,7 @@ namespace
 
 autowhite::autowhite()
 {
-   setDescriptorId("{cd8af530-89ca-11e0-9d78-0800200c9a66}");
+   setDescriptorId("{212849e0-8df4-11e0-91e4-0800200c9a66}");
    setName("autowhite");
    setDescription("Auto white balance on an image");
    setCreator("Pratik Anand");
@@ -91,18 +93,35 @@ bool autowhite::getOutputSpecification(PlugInArgList*& pOutArgList)
 
 
 
-double maxBandValue(RasterElement *pRaster,int i)
+void maxBandValue(RasterElement *pRaster,double result[])
 {
-	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
-	DimensionDescriptor thirdBand = pDesc->getActiveBand(i);
-	
+   RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
+   
+   //RED
+   DimensionDescriptor firstBand = pDesc->getActiveBand(0);
    FactoryResource<DataRequest> pRequest;
    pRequest->setInterleaveFormat(BSQ);
-   pRequest->setBands(thirdBand, thirdBand);
+   pRequest->setBands(firstBand, firstBand);
+   DataAccessor firstBandDa = pRaster->getDataAccessor(pRequest.release());
+
+   //GREEN
+   DimensionDescriptor secondBand = pDesc->getActiveBand(1);
+   FactoryResource<DataRequest> qRequest;
+   qRequest->setInterleaveFormat(BSQ);
+   qRequest->setBands(secondBand, secondBand);
+   DataAccessor secondBandDa = pRaster->getDataAccessor(qRequest.release());
+
+   //BLUE
+   DimensionDescriptor thirdBand = pDesc->getActiveBand(2);
+   FactoryResource<DataRequest> rRequest;
+   rRequest->setInterleaveFormat(BSQ);
+   rRequest->setBands(thirdBand, thirdBand);
+   DataAccessor thirdBandDa = pRaster->getDataAccessor(rRequest.release());
 
    double pixelVal,max=0;
-
-   DataAccessor thirdBandDa = pRaster->getDataAccessor(pRequest.release());
+   //double rVal=0,gVal=0,bVal=0;
+   double band[3]={0.0,0.0,0.0};
+     
    
 
 
@@ -112,16 +131,36 @@ double maxBandValue(RasterElement *pRaster,int i)
 
       for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
 
-      {
-		  max=std::max(max,thirdBandDa->getColumnAsDouble());
+      {   
+		  band[0]=firstBandDa->getColumnAsDouble();		//RED
+		  band[1]=secondBandDa->getColumnAsDouble();	//GREEN
+		  band[2]=thirdBandDa->getColumnAsDouble();		//BLUE
+
+		  if(max<(band[0]+band[1]+band[2]))
+		  { 
+			  max=band[0]+band[1]+band[2];
+			  
+			  //storing result of R, G & B values 
+			  result[0]=band[0];
+			  result[1]=band[1];
+			  result[2]=band[2];
+
+		  }
+
+		  
+			  
+		  firstBandDa->nextColumn();
+		  secondBandDa->nextColumn();
 		  thirdBandDa->nextColumn();
 	  }
 
-      thirdBandDa->nextRow();
+      firstBandDa->nextRow();
+	  secondBandDa->nextRow();
+	  thirdBandDa->nextRow();
 
    }
 
-   return max;
+  
    
 }
 
@@ -218,31 +257,32 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    VERIFY(pDesc != NULL);
 
    
-   double max0=maxBandValue(pCube,0);									//Max RED value
-   double max1=maxBandValue(pCube,1);									//Max GREEN value
-   double max2=maxBandValue(pCube,2);									//Max BLUE value
+   double result[3]={0.0,0.0,0.0};
+   maxBandValue(pCube,result);									
 
-   std::string msg="Old values: RED Band 0:"+StringUtilities::toDisplayString(max0)+"\n"
-				  +"GREEN Band 1:"+StringUtilities::toDisplayString(max1)+"\n"
-				  +"BLUE Band 2:"+StringUtilities::toDisplayString(max2)+"\n";
+   std::string msg="Old values: RED Band 0:"+StringUtilities::toDisplayString(result[0])+"\n"
+				  +"GREEN Band 1:"+StringUtilities::toDisplayString(result[1])+"\n"
+				  +"BLUE Band 2:"+StringUtilities::toDisplayString(result[2])+"\n";
+  
    
+
    pProgress->updateProgress(msg,20,NORMAL);							//show initial R,G and B values
 
   
    //auto white correction
    double correct[3];
-   if(max0>255||max1>255||max2>255)										//if image is 16-bit
+   if(result[0]>255||result[1]>255||result[2]>255)						//if image is 16-bit
    {
-	correct[0]= (65535/max0);
-    correct[1]= (65535/max1);
-    correct[2]= (65535/max2);
+	correct[0]= (65535/result[0]);
+    correct[1]= (65535/result[1]);
+    correct[2]= (65535/result[2]);
 
    }
    else
    {																	//if image is 8-bit
-	correct[0]= (255/max0);
-    correct[1]= (255/max1);
-    correct[2]= (255/max2);
+	correct[0]= (255/result[0]);
+    correct[1]= (255/result[1]);
+    correct[2]= (255/result[2]);
    }
 
    RasterElement *dRas=RasterUtilities::createRasterElement(pCube->getName()+"RGB",
@@ -253,7 +293,9 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 
 
    //request
+   _sleep(1000);
    pProgress->updateProgress(msg, 50, NORMAL);
+   _sleep(5000);
    
    copyImage(pCube,dRas,0,pProgress,correct[0]);
    pProgress->updateProgress(msg+"RED complete", 60, NORMAL);
@@ -279,13 +321,12 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    
    //new statistics
    
-   max0=maxBandValue(dRas,0);											//Max RED value
-   max1=maxBandValue(dRas,1);											//Max GREEN value
-   max2=maxBandValue(dRas,2);											//Max BLUE value
+   maxBandValue(dRas,result);											
+   
 
-   msg="New values:  RED Band 0:"+StringUtilities::toDisplayString(max0)+"\n"
-				  +"GREEN Band 1:"+StringUtilities::toDisplayString(max1)+"\n"
-				  +"BLUE Band 2:"+StringUtilities::toDisplayString(max2);
+   msg="New values: RED Band 0:"+StringUtilities::toDisplayString(result[0])+"\n"
+				  +"GREEN Band 1:"+StringUtilities::toDisplayString(result[1])+"\n"
+				  +"BLUE Band 2:"+StringUtilities::toDisplayString(result[2])+"\n";
    
    pProgress->updateProgress(msg,100,NORMAL);							//show final R,G and B values
 
