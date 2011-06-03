@@ -30,7 +30,7 @@
 #include "autowhite.h"
 #include <limits>
 
-#include <windows.h>
+
 
 REGISTER_PLUGIN_BASIC(OpticksTutorial, autowhite);
 
@@ -293,9 +293,9 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 
 
    //request
-   _sleep(1000);
+   
    pProgress->updateProgress(msg, 50, NORMAL);
-   _sleep(5000);
+   
    
    copyImage(pCube,dRas,0,pProgress,correct[0]);
    pProgress->updateProgress(msg+"RED complete", 60, NORMAL);
