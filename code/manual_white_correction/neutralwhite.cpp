@@ -11,6 +11,7 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QMouseEvent>
 
+#include "AppConfig.h"
 #include "AppVerify.h"
 #include "DesktopServices.h"
 #include "DimensionDescriptor.h"
@@ -49,18 +50,18 @@ static const char* const MouseModeIcon2[] =
    "# c #000000",
    ". c #ffffff",
    "................",
-   ".......#........",
+   "................",
    "........#.......",
    "........#.......",
    "........#.......",
-   ".#...#..#.#...#.",
-   "..#.#...#.#...#.",
-   "...#....#..#.#..",
-   "...#....#..#.#..",
-   "..#.#...#...#...",
-   ".#...#..#...#...",
-   "........#..#....",
-   ".......#...#....",
+   ".#....#.#.#####.",
+   ".##...#.#.#...#.",
+   ".#.#..#.#.#..#..",
+   ".#.#..#.#.#.#...",
+   ".#..#.#.#.#.#...",
+   ".#...#..#.#..#..",
+   "........#.......",
+   "................",
    "................",
    "................",
    "................"
@@ -68,11 +69,145 @@ static const char* const MouseModeIcon2[] =
 
 REGISTER_PLUGIN_BASIC(OpticksTutorial, neutralwhite);
 
+
+
+namespace
+{
+   template<typename T>
+   void copywhite2(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize,double correct)
+   {
+      
+	  pSrcAcc->toPixel(row, col);
+      VERIFYNRV(pSrcAcc.isValid());
+      T midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  
+	  midVal=midVal*correct;
+	  
+	  *pData=static_cast<T>(midVal);
+   }
+};
+
+void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,double correct[])
+{
+
+	//RED
+   DimensionDescriptor firstBand = pDesc->getActiveBand(0);
+   FactoryResource<DataRequest> pRequest;
+   pRequest->setInterleaveFormat(BSQ);
+   pRequest->setBands(firstBand, firstBand);
+   DataAccessor firstBandDa = pRaster->getDataAccessor(pRequest.release());
+
+   //GREEN
+   DimensionDescriptor secondBand = pDesc->getActiveBand(1);
+   FactoryResource<DataRequest> qRequest;
+   qRequest->setInterleaveFormat(BSQ);
+   qRequest->setBands(secondBand, secondBand);
+   DataAccessor secondBandDa = pRaster->getDataAccessor(qRequest.release());
+
+   //BLUE
+   DimensionDescriptor thirdBand = pDesc->getActiveBand(2);
+   FactoryResource<DataRequest> rRequest;
+   rRequest->setInterleaveFormat(BSQ);
+   rRequest->setBands(thirdBand, thirdBand);
+   DataAccessor thirdBandDa = pRaster->getDataAccessor(rRequest.release());
+
+   
+   firstBandDa->toPixel(y,x);
+   VERIFYNRV(firstBandDa.isValid());
+   correct[0]=firstBandDa->getColumnAsDouble();		
+
+   secondBandDa->toPixel(y,x);
+   VERIFYNRV(secondBandDa.isValid());
+   correct[1]=secondBandDa->getColumnAsDouble();
+
+   thirdBandDa->toPixel(y,x);
+   VERIFYNRV(thirdBandDa.isValid());
+   correct[2]=thirdBandDa->getColumnAsDouble();
+
+
+
+   //display msg
+
+   Service<DesktopServices> pDesktop;
+
+  SpatialDataView* pSpatialDataView =
+               dynamic_cast<SpatialDataView*>(pDesktop->getCurrentWorkspaceWindowView());
+  //if (pSpatialDataView != NULL)
+       //{
+        QWidget* pViewWidget2 = pSpatialDataView->getWidget();
+       //}
+
+   QMessageBox::information(pViewWidget2, "Display RGB values",
+                                             "RGB values of the selected pixel are (" +
+											 QString::number(correct[0]) + ", " +
+                                             QString::number(correct[1]) + ", " +
+											 QString::number(correct[2]) + ")");
+
+
+
+}
+
+bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double correct)
+{   
+	VERIFY(pRaster != NULL);
+	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
+	VERIFY(dRaster != NULL);
+	RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRaster->getDataDescriptor());
+
+	
+	
+	DimensionDescriptor thirdBand = pDesc->getActiveBand(i);   //get active band
+	
+   //source
+   FactoryResource<DataRequest> pRequest;
+   pRequest->setInterleaveFormat(BSQ);
+   pRequest->setBands(thirdBand, thirdBand);
+   DataAccessor thirdBandDa = pRaster->getDataAccessor(pRequest.release());
+
+   
+   thirdBand = rDesc->getActiveBand(i);
+
+   //destination
+   FactoryResource<DataRequest> pResultRequest;
+   pResultRequest->setWritable(true);
+   pRequest->setInterleaveFormat(BSQ);
+   pResultRequest->setBands(thirdBand,thirdBand);
+   DataAccessor pDestAcc = dRaster->getDataAccessor(pResultRequest.release());
+
+   
+
+   double pixelVal,max=0;
+   void *ptr=NULL,*ptr2=NULL;
+
+   
+   
+   VERIFY(thirdBandDa.isValid());
+   VERIFY(pDestAcc.isValid());
+   
+
+   for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
+
+   {
+	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
+	  {	  
+		
+		switchOnEncoding(pDesc->getDataType(), copywhite2, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
+        pDesc->getRowCount(), pDesc->getColumnCount(),correct);
+		pDestAcc->nextColumn();
+	  }
+	        
+	  pDestAcc->nextRow();
+
+   }
+
+   return true;
+}
+
 neutralwhite::neutralwhite() :
    mpMouseMode(NULL),
    mpMouseModeAction3(NULL)
 {
-   AlgorithmShell::setName("Custom Mouse Mode Plug-In");
+   AlgorithmShell::setName("Neutral Reference Selection for white correction");
    setCreator("Opticks Community");
    setVersion("Sample");
    setCopyright("Copyright (C) 2008, Ball Aerospace & Technologies Corp.");
@@ -87,6 +222,15 @@ neutralwhite::neutralwhite() :
    destroyAfterExecute(false);
    setAbortSupported(false);
    setWizardSupported(false);
+
+   //initialise the value
+   correct[0]=correct[1]=correct[2]=0.0;  
+   pRaster=NULL;
+   dRaster=NULL;
+   pDescriptor=NULL;
+   rDesc=NULL;
+   pView=NULL;
+   pWindow=NULL;
 }
 
 neutralwhite::~neutralwhite()
@@ -95,7 +239,7 @@ neutralwhite::~neutralwhite()
 
    // Remove the toolbar button and delete the mouse mode action
    
-   ToolBar* pToolBar = dynamic_cast<ToolBar*>(pDesktop->getWindow("Demo2", TOOLBAR));
+   ToolBar* pToolBar = dynamic_cast<ToolBar*>(pDesktop->getWindow("Photography", TOOLBAR));
    if (pToolBar != NULL)
    {
       if (mpMouseModeAction3 != NULL)
@@ -149,7 +293,9 @@ bool neutralwhite::setBatch()
 }
 
 bool neutralwhite::getInputSpecification(PlugInArgList*& pArgList)
-{
+{  
+   //VERIFY(pArgList = Service<PlugInManagerServices>()->getPlugInArgList());
+   //pArgList->addArg<Progress>(AlgorithmShell::ProgressArg(), NULL, "Progress reporter");
    pArgList = NULL;
    return !isBatch();
 }
@@ -162,7 +308,12 @@ bool neutralwhite::getOutputSpecification(PlugInArgList*& pArgList)
 
 bool neutralwhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 {
-   StepResource pStep("mMode", "pratik", "5EA0CC75-9E0B-4c3d-BA23-6DB7157BBD54");
+   StepResource pStep("mMode", "m_whitecorr", "5EA0CC75-9E0B-4c3d-BA23-6DB7157BBD54");
+
+
+   //Progress* pProgress = pInArgList->getPlugInArgValue<Progress>(AlgorithmShell::ProgressArg());
+   RasterElement* pRaster=NULL;
+   RasterDataDescriptor* pDescriptor=NULL;
 
    if (isBatch() == true)
    {
@@ -184,10 +335,10 @@ bool neutralwhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
 
    // Add a button to the Demo toolbar
    
-   ToolBar* pToolBar = dynamic_cast<ToolBar*>(pDesktop->getWindow("Demo2", TOOLBAR));
+   ToolBar* pToolBar = dynamic_cast<ToolBar*>(pDesktop->getWindow("Photography", TOOLBAR));
    if (pToolBar == NULL)
    {
-      pToolBar = dynamic_cast<ToolBar*>(pDesktop->createWindow("Demo2",TOOLBAR));
+      pToolBar = dynamic_cast<ToolBar*>(pDesktop->createWindow("Photography",TOOLBAR));
    }
    if (pToolBar != NULL)
    {
@@ -201,6 +352,10 @@ bool neutralwhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    pDesktop->attach(SIGNAL_NAME(DesktopServices, WindowAdded), Slot(this, &neutralwhite::windowAdded));
    pDesktop->attach(SIGNAL_NAME(DesktopServices, WindowActivated), Slot(this, &neutralwhite::windowActivated));
    pDesktop->attach(SIGNAL_NAME(DesktopServices, WindowRemoved), Slot(this, &neutralwhite::windowRemoved));
+
+
+   //logging
+   pStep->finalize();
 
    return true;
 }
@@ -294,7 +449,7 @@ bool neutralwhite::deserialize(SessionItemDeserializer& deserializer)
 
 bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 {
-   if ((pObject != NULL) && (pEvent != NULL))
+	if ((pObject != NULL) && (pEvent != NULL))
    {
       if (pEvent->type() == QEvent::MouseButtonPress)
       {
@@ -336,7 +491,7 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
                            LayerList* pLayerList = pSpatialDataView->getLayerList();
                            if (pLayerList != NULL)
                            {
-                              RasterElement* pRaster = pLayerList->getPrimaryRasterElement();
+                             RasterElement*  pRaster = pLayerList->getPrimaryRasterElement();
                               if (pRaster != NULL)
                               {
                                  Layer* pLayer = pLayerList->getLayer(RASTER, pRaster);
@@ -347,8 +502,8 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
                                        dataCoord.mX, dataCoord.mY);
 
                                     // Get the original pixel coordinates
-                                    const RasterDataDescriptor* pDescriptor =
-                                       dynamic_cast<const RasterDataDescriptor*>(pRaster->getDataDescriptor());
+                                   RasterDataDescriptor* pDescriptor =
+                                       dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
                                     if (pDescriptor != NULL)
                                     {
                                        const vector<DimensionDescriptor>& activeRows = pDescriptor->getRows();
@@ -363,13 +518,93 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
                                           DimensionDescriptor rowDim = activeRows[dataCoord.mY];
                                           DimensionDescriptor columnDim = activeColumns[dataCoord.mX];
 
-                                          unsigned int originalSceneX = columnDim.getOriginalNumber() + 1;
-                                          unsigned int originalSceneY = rowDim.getOriginalNumber() + 1;
+                                          int originalSceneX = columnDim.getOriginalNumber() + 1;
+                                          int originalSceneY = rowDim.getOriginalNumber() + 1;
 
                                           QMessageBox::information(pViewWidget, "Display Pixel Coordinate",
                                              "The coordinate of the selected pixel is (" +
-                                             QString::number(originalSceneX) + ", " +
+											 QString::number(originalSceneX) + ", " +
                                              QString::number(originalSceneY) + ")");
+
+										  //getting r,g & b values of selected neutral reference
+										 
+										  getRGB(pRaster,pDescriptor,originalSceneX,originalSceneY,correct);
+										  
+										  //new raster window
+										   if(pDescriptor!=NULL)
+										   {
+									RasterElement *dRaster=RasterUtilities::createRasterElement(pRaster->getName()+"RGB",
+											   pDescriptor->getRowCount(), pDescriptor->getColumnCount(),3, pDescriptor->getDataType(),BSQ);
+										  
+										  if(correct[0]>255||correct[1]>255||correct[2]>255)						//if image is 16-bit
+											   {
+												if(correct[0]<1)
+												{ correct[0]=1;}
+
+												if(correct[1]<1)
+												{ correct[1]=1;}
+												
+												if(correct[2]<1)
+												{ correct[2]=1;}
+
+												correct[0]= (65535/correct[0]);
+												correct[1]= (65535/correct[1]);
+												correct[2]= (65535/correct[2]);
+
+											   }
+											   else
+											   {																	//if image is 8-bit
+												
+												if(correct[0]<1)
+												{ correct[0]=1;}
+
+												if(correct[1]<1)
+												{ correct[1]=1;}
+												
+												if(correct[2]<1)
+												{ correct[2]=1;}
+
+												correct[0]= (255/correct[0]);
+												correct[1]= (255/correct[1]);
+												correct[2]= (255/correct[2]);
+											   }
+										  
+										     
+																			  
+										    copyImage2(pRaster,dRaster,0,correct[0]);
+											copyImage2(pRaster,dRaster,1,correct[1]);
+											copyImage2(pRaster,dRaster,2,correct[2]);
+										  
+										  
+											//new model resource
+									RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRaster->getDataDescriptor());
+											rDesc->setDisplayMode(RGB_MODE);										//enable color mode
+											rDesc->setDisplayBand(RED,pDescriptor->getActiveBand(0));
+											rDesc->setDisplayBand(GREEN,pDescriptor->getActiveBand(1));
+											rDesc->setDisplayBand(BLUE,pDescriptor->getActiveBand(2));
+											ModelResource<RasterElement> pResultCube(dRaster);
+										  
+											//create new window
+
+											if(!isBatch())
+											{
+											 Service<DesktopServices> pDesktop;
+
+										  SpatialDataWindow* pWindow = static_cast<SpatialDataWindow*>(pDesktop->createWindow(pResultCube->getName(),
+												SPATIAL_DATA_WINDOW));
+
+										 SpatialDataView* pView = (pWindow == NULL) ? NULL : pWindow->getSpatialDataView();	
+										    
+											 pView->setPrimaryRasterElement(pResultCube.get());
+											 pView->createLayer(RASTER, pResultCube.get());
+
+											 pResultCube.release();  //saving data
+
+											}
+
+										   }
+										    
+
                                        }
                                     }
                                  }
@@ -378,7 +613,10 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
                         }
                      }
                   }
-               }
+              
+				  pSpatialDataView->setMouseMode(NULL);  //disable mouse mode
+				  
+			   }
             }
          }
       }
@@ -438,7 +676,11 @@ void neutralwhite::windowRemoved(Subject& subject, const string& signal, const b
          }
       }
    }
+
+
 }
+
+
 
 void neutralwhite::addMouseMode(SpatialDataView* pView)
 {
@@ -493,3 +735,4 @@ void neutralwhite::enableAction()
       mpMouseModeAction3->setEnabled(bEnable);
    }
 }
+

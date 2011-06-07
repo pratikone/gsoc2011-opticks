@@ -17,7 +17,11 @@
 #include "AlgorithmShell.h"
 #include "SessionItemDeserializer.h"
 #include "SessionItemSerializer.h"
-
+#include "RasterDataDescriptor.h"
+#include "RasterElement.h"
+#include "RasterUtilities.h"
+#include "SpatialDataView.h"
+#include "SpatialDataWindow.h"
 #include <boost/any.hpp>
 #include <string>
 
@@ -29,6 +33,12 @@ class neutralwhite : public QObject, public AlgorithmShell
 public:
    neutralwhite();
    ~neutralwhite();
+
+   double correct[3];
+   RasterElement *pRaster,*dRaster;
+   RasterDataDescriptor *pDescriptor,*rDesc;
+   SpatialDataView *pView;
+   SpatialDataWindow *pWindow;
 
    bool setBatch();
    bool getInputSpecification(PlugInArgList*& pArgList);
@@ -47,6 +57,7 @@ protected:
    void addMouseMode(SpatialDataView* pView);
    void removeMouseMode(SpatialDataView* pView);
    void enableAction();
+   
 
 private:
    MouseMode* mpMouseMode;
