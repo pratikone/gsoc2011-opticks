@@ -5,17 +5,18 @@ pratik[at]pratikanand[dot]com
 nick:pratikone
 #######################################
 
-Automatic White Correction
-----------------------------
-Automatic white correction on images (both 8-bit and 16-bit).
+Manual White Correction (selecting neutral reference point)
+-----------------------------------------------------------
+Manual white correction on images (both 8-bit and 16-bit).
 
 Algorithm
-image pixel with max value P(r+g+b)
+Neutral reference point selected by the user.
+N(r,g,b)=red,green & blue values of neutral reference
 
 if the image is 16-bit
 
 then for every RED, GREEN and BLUE band of image
-old=P(band)
+old=N(band)
 new=(65535)*old/new
 Img(band)=new
 
@@ -23,7 +24,7 @@ Img(band)=new
 if the image is 8-bit
 
 then for every RED, GREEN and BLUE band of image
-old=P(band)
+old=N(band)
 new=(255)*old/new
 Img(band)=new
 
