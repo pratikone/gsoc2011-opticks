@@ -22,8 +22,8 @@ public:
    virtual bool getOutputSpecification(PlugInArgList*& pOutArgList);
    virtual bool execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList);
 
-
-   
+      
+  
 };
 
 #endif

@@ -74,7 +74,7 @@ REGISTER_PLUGIN_BASIC(OpticksTutorial, neutralwhite);
 namespace
 {
    template<typename T>
-   void copywhite2(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize,double correct)
+   void copywhite2(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize,double correct,double max)
    {
       
 	  pSrcAcc->toPixel(row, col);
@@ -82,6 +82,12 @@ namespace
       T midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
 	  
 	  midVal=midVal*correct;
+	  //overflow check
+	  if((pSrcAcc->getColumnAsDouble()*correct)>=max)			//comparison with midVal not possible
+		  {
+			  midVal=max;
+		  }
+	  
 	  
 	  *pData=static_cast<T>(midVal);
    }
@@ -147,7 +153,7 @@ void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,doubl
 
 }
 
-bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double correct)
+bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double max,double correct)
 {   
 	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
@@ -176,10 +182,6 @@ bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double corre
 
    
 
-   double pixelVal,max=0;
-   void *ptr=NULL,*ptr2=NULL;
-
-   
    
    VERIFY(thirdBandDa.isValid());
    VERIFY(pDestAcc.isValid());
@@ -192,7 +194,8 @@ bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double corre
 	  {	  
 		
 		switchOnEncoding(pDesc->getDataType(), copywhite2, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
-        pDesc->getRowCount(), pDesc->getColumnCount(),correct);
+			pDesc->getRowCount(), pDesc->getColumnCount(),correct,max);
+		
 		pDestAcc->nextColumn();
 	  }
 	        
@@ -208,10 +211,10 @@ neutralwhite::neutralwhite() :
    mpMouseModeAction3(NULL)
 {
    AlgorithmShell::setName("Neutral Reference Selection for white correction");
-   setCreator("Opticks Community");
-   setVersion("Sample");
-   setCopyright("Copyright (C) 2008, Ball Aerospace & Technologies Corp.");
-   setDescription("Demonstrates creating a custom mouse mode.");
+   setCreator("Pratik Anand");
+   setVersion("0.1");
+   setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
+   setDescription("White balance correction of an image based in selected neutral reference");
    setDescriptorId("{e538f9a0-8e27-11e0-91e4-0800200c9a66}");
    //setMenuLocation("[ABC]/neutralwhite");
    
@@ -331,7 +334,7 @@ bool neutralwhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    mpMouseModeAction3 = new QAction(mouseModeIcon2, "Display Pixel Coordinate 2", this);
    mpMouseModeAction3->setAutoRepeat(false);
    mpMouseModeAction3->setCheckable(true);
-   mpMouseModeAction3->setStatusTip("Displays the coordinate of a pixel selected with the mouse");
+   mpMouseModeAction3->setStatusTip("Select the neutral reference for white correction ");
 
    // Add a button to the Demo toolbar
    
@@ -538,6 +541,7 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 										  
 										  if(correct[0]>255||correct[1]>255||correct[2]>255)						//if image is 16-bit
 											   {
+												//underflow check
 												if(correct[0]<1)
 												{ correct[0]=1;}
 
@@ -551,10 +555,14 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 												correct[1]= (65535/correct[1]);
 												correct[2]= (65535/correct[2]);
 
+												copyImage2(pRaster,dRaster,0,65535,correct[0]);
+												copyImage2(pRaster,dRaster,1,65535,correct[1]);
+												copyImage2(pRaster,dRaster,2,65535,correct[2]);
+
 											   }
 											   else
 											   {																	//if image is 8-bit
-												
+												//underflow check
 												if(correct[0]<1)
 												{ correct[0]=1;}
 
@@ -567,13 +575,16 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 												correct[0]= (255/correct[0]);
 												correct[1]= (255/correct[1]);
 												correct[2]= (255/correct[2]);
-											   }
+											   
+												copyImage2(pRaster,dRaster,0,255,correct[0]);
+												copyImage2(pRaster,dRaster,1,255,correct[1]);
+												copyImage2(pRaster,dRaster,2,255,correct[2]);
+										  
+												}
 										  
 										     
 																			  
-										    copyImage2(pRaster,dRaster,0,correct[0]);
-											copyImage2(pRaster,dRaster,1,correct[1]);
-											copyImage2(pRaster,dRaster,2,correct[2]);
+										    
 										  
 										  
 											//new model resource

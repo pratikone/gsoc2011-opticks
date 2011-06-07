@@ -30,6 +30,7 @@
 #include "autowhite.h"
 #include <limits>
 
+//#include<windows.h>
 
 
 REGISTER_PLUGIN_BASIC(OpticksTutorial, autowhite);
@@ -273,13 +274,34 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    double correct[3];
    if(result[0]>255||result[1]>255||result[2]>255)						//if image is 16-bit
    {
+	if(result[0]<1)
+	{ correct[0]=1;}
+
+	if(result[1]<1)
+	{ correct[1]=1;}
+												
+	if(result[2]<1)
+	{ correct[2]=1;}
+
+    
 	correct[0]= (65535/result[0]);
     correct[1]= (65535/result[1]);
     correct[2]= (65535/result[2]);
 
    }
    else
-   {																	//if image is 8-bit
+   {
+																	//if image is 8-bit
+	if(result[0]<1)
+	{ correct[0]=1;}
+
+	if(result[1]<1)
+	{ correct[1]=1;}
+												
+	if(result[2]<1)
+	{ correct[2]=1;}
+
+	   
 	correct[0]= (255/result[0]);
     correct[1]= (255/result[1]);
     correct[2]= (255/result[2]);
@@ -288,10 +310,14 @@ bool autowhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    RasterElement *dRas=RasterUtilities::createRasterElement(pCube->getName()+"RGB",
       pDesc->getRowCount(), pDesc->getColumnCount(),3, pDesc->getDataType(),BSQ);
 
-   
-   
-
-
+   /*
+   //_sleep(2000);
+   msg="$$$$$: RED Band 0:"+StringUtilities::toDisplayString(correct[0])+"\n"
+				  +"GREEN Band 1:"+StringUtilities::toDisplayString(correct[1])+"\n"
+				  +"BLUE Band 2:"+StringUtilities::toDisplayString(correct[2])+"\n";
+  pProgress->updateProgress(msg, 50, NORMAL);
+   _sleep(5000);
+   */
    //request
    
    pProgress->updateProgress(msg, 50, NORMAL);
