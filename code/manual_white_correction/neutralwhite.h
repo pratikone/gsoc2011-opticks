@@ -1,6 +1,6 @@
 /*
  * The information in this file is
- * Copyright(c) 2007 Ball Aerospace & Technologies Corporation
+ * Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>
  * and is subject to the terms and conditions of the
  * GNU Lesser General Public License Version 2.1
  * The license text is available from   
@@ -57,7 +57,8 @@ protected:
    void addMouseMode(SpatialDataView* pView);
    void removeMouseMode(SpatialDataView* pView);
    void enableAction();
-   
+   bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double max,double correct);
+   bool neutralwhite::getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,double correct[]);
 
 private:
    MouseMode* mpMouseMode;

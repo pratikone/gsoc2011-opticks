@@ -1,6 +1,6 @@
 /*
  * The information in this file is
- * Copyright(c) 2007 Ball Aerospace & Technologies Corporation
+ * Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>
  * and is subject to the terms and conditions of the
  * GNU Lesser General Public License Version 2.1
  * The license text is available from   
@@ -79,11 +79,11 @@ namespace
       
 	  pSrcAcc->toPixel(row, col);
       VERIFYNRV(pSrcAcc.isValid());
-      T midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+      double midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
 	  
 	  midVal=midVal*correct;
 	  //overflow check
-	  if((pSrcAcc->getColumnAsDouble()*correct)>=max)			//comparison with midVal not possible
+	  if(midVal>=max)			
 		  {
 			  midVal=max;
 		  }
@@ -93,10 +93,11 @@ namespace
    }
 };
 
-void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,double correct[])
+bool neutralwhite::getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,double correct[])
 {
 
 	//RED
+   VERIFY(pRaster != NULL);
    DimensionDescriptor firstBand = pDesc->getActiveBand(0);
    FactoryResource<DataRequest> pRequest;
    pRequest->setInterleaveFormat(BSQ);
@@ -119,15 +120,15 @@ void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,doubl
 
    
    firstBandDa->toPixel(y,x);
-   VERIFYNRV(firstBandDa.isValid());
+   VERIFY(firstBandDa.isValid());
    correct[0]=firstBandDa->getColumnAsDouble();		
 
    secondBandDa->toPixel(y,x);
-   VERIFYNRV(secondBandDa.isValid());
+   VERIFY(secondBandDa.isValid());
    correct[1]=secondBandDa->getColumnAsDouble();
 
    thirdBandDa->toPixel(y,x);
-   VERIFYNRV(thirdBandDa.isValid());
+   VERIFY(thirdBandDa.isValid());
    correct[2]=thirdBandDa->getColumnAsDouble();
 
 
@@ -135,13 +136,14 @@ void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,doubl
    //display msg
 
    Service<DesktopServices> pDesktop;
+   QWidget* pViewWidget2=NULL;
 
   SpatialDataView* pSpatialDataView =
                dynamic_cast<SpatialDataView*>(pDesktop->getCurrentWorkspaceWindowView());
-  //if (pSpatialDataView != NULL)
-       //{
-        QWidget* pViewWidget2 = pSpatialDataView->getWidget();
-       //}
+  if (pSpatialDataView != NULL)
+       {
+        pViewWidget2 = pSpatialDataView->getWidget();
+       }
 
    QMessageBox::information(pViewWidget2, "Display RGB values",
                                              "RGB values of the selected pixel are (" +
@@ -149,11 +151,11 @@ void getRGB(RasterElement *pRaster,RasterDataDescriptor* pDesc,int x,int y,doubl
                                              QString::number(correct[1]) + ", " +
 											 QString::number(correct[2]) + ")");
 
-
+   return true;
 
 }
 
-bool copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double max,double correct)
+bool neutralwhite::copyImage2(RasterElement *pRaster,RasterElement *dRaster,int i,double max,double correct)
 {   
 	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
@@ -297,8 +299,7 @@ bool neutralwhite::setBatch()
 
 bool neutralwhite::getInputSpecification(PlugInArgList*& pArgList)
 {  
-   //VERIFY(pArgList = Service<PlugInManagerServices>()->getPlugInArgList());
-   //pArgList->addArg<Progress>(AlgorithmShell::ProgressArg(), NULL, "Progress reporter");
+   
    pArgList = NULL;
    return !isBatch();
 }
@@ -536,7 +537,7 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 										  //new raster window
 										   if(pDescriptor!=NULL)
 										   {
-									RasterElement *dRaster=RasterUtilities::createRasterElement(pRaster->getName()+"RGB",
+									RasterElement *dRaster=RasterUtilities::createRasterElement(pRaster->getName()+"neutral",
 											   pDescriptor->getRowCount(), pDescriptor->getColumnCount(),3, pDescriptor->getDataType(),BSQ);
 										  
 										  if(correct[0]>255||correct[1]>255||correct[2]>255)						//if image is 16-bit

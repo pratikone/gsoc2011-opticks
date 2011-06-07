@@ -1,6 +1,6 @@
 /*
  * The information in this file is
- * Copyright(c) 2007 Ball Aerospace & Technologies Corporation
+ * Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>
  * and is subject to the terms and conditions of the
  * GNU Lesser General Public License Version 2.1
  * The license text is available from   
@@ -39,7 +39,6 @@ REGISTER_PLUGIN_BASIC(OpticksTutorial, autowhite);
 
 
 
-
 namespace
 {
    template<typename T>
@@ -48,14 +47,14 @@ namespace
       
 	  pSrcAcc->toPixel(row, col);
       VERIFYNRV(pSrcAcc.isValid());
-      T midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+      double midVal = *reinterpret_cast<T*>(pSrcAcc->getColumn());
 	  
 	  midVal=midVal*correct;
 	  
 	  *pData=static_cast<T>(midVal);
    }
-};
 
+};
 
 
 autowhite::autowhite()
@@ -94,8 +93,9 @@ bool autowhite::getOutputSpecification(PlugInArgList*& pOutArgList)
 
 
 
-void maxBandValue(RasterElement *pRaster,double result[])
+bool autowhite::maxBandValue(RasterElement *pRaster,double result[])
 {
+   VERIFY(pRaster!=NULL)
    RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
    
    //RED
@@ -161,14 +161,15 @@ void maxBandValue(RasterElement *pRaster,double result[])
 
    }
 
-  
+  return true;
    
 }
 
-void copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress,double correct)
+bool autowhite::copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress,double correct)
 {   
-
+	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
+	VERIFY(dRaster != NULL);
 	RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRaster->getDataDescriptor());
 
 	
@@ -193,13 +194,11 @@ void copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pPr
 
    
 
-   double pixelVal,max=0;
-   void *ptr=NULL,*ptr2=NULL;
-
    
    
-   VERIFYNRV(thirdBandDa.isValid());
-   VERIFYNRV(pDestAcc.isValid());
+   
+   VERIFY(thirdBandDa.isValid());
+   VERIFY(pDestAcc.isValid());
    
 
    for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
@@ -217,6 +216,7 @@ void copyImage(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pPr
 
    }
 
+   return true;
 }
 
 
