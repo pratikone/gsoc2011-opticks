@@ -1,0 +1,20 @@
+#######################################
+Pratik Anand
+pratik[dot]preet[at]gmail[dot]com
+pratik[at]pratikanand[dot]com
+nick:pratikone
+#######################################
+
+Noise reduction by Median Filter
+-----------------------------------------------------------
+Reducing noise of salt-n-pepper types by using Median filter
+
+Algorithm
+For every pixel in an image,
+a 9x9 filter is created with that pixel at center
+and its neighbours at respective positions.
+
+Now, median is calculated of the filter
+and, new value of P = median
+
+The resultant image has much of its noise elements removed.

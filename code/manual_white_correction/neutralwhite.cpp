@@ -626,7 +626,7 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
                      }
                   }
               
-				  pSpatialDataView->setMouseMode(NULL);  //disable mouse mode
+				  //pSpatialDataView->setMouseMode(NULL);  //disable mouse mode
 				  
 			   }
             }
