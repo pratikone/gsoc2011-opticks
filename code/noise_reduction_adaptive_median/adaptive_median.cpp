@@ -24,15 +24,18 @@
 #include "SpatialDataWindow.h"
 #include "switchOnEncoding.h"
 #include "StringUtilities.h"
-#include "median_noise.h"
+#include "adaptive_median.h"
 #include <limits>
 
-REGISTER_PLUGIN_BASIC(OpticksTutorial, median_noise);
+
+REGISTER_PLUGIN_BASIC(OpticksTutorial, adaptive_median);
+
+#define MAX_SIZE 15
 
 namespace
 {
    template<typename T>
-   void medianfilter(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize)
+   void adaptivemedian(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize, int size, int sizeMax,Progress* pProgress,int *flagptr)
    {
       int prevCol = std::max(col - 1, 0);
       int prevRow = std::max(row - 1, 0);
@@ -40,54 +43,72 @@ namespace
       int nextRow = std::min(row + 1, rowSize - 1);
       
 	  
-	  
-	  
-	  double sampledata[9];
+	  double sampledata[625];
 	  double val,median=0;
+	  
+	  double zmin=0,zmax=0,zxy=0;
 
-      
-	  pSrcAcc->toPixel(prevRow, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[0]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  int r=0,c=0;
+	  int ctr=0;
+	  int row2=row,col2=col;
+	  
+	  for(r=size/2;r>=0;r--,row2--)
+		 { 
+			if(r==(int)size/2)
+				   c=size/2;
+			else {
+					c=size-1;
+					col2=col2+size-1;
+				 }
 
-      pSrcAcc->toPixel(prevRow, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[1]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(prevRow, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[2] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(row, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[3] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-	  pSrcAcc->toPixel(row, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[4]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(row, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[5]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[6]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[7]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[8] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+			while(c>=0)
+			 {   
+				  pSrcAcc->toPixel(std::max(row2,0), std::max(col2,0));
+				  VERIFYNRV(pSrcAcc.isValid());
+				  sampledata[ctr++]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+				  
+				  c--;
+				  col2--;
+			  }
+		  }
 
 	  
-    
+	  
+	  row2=row,col2=col+1;
+
+	  for(r=size/2;r<size;r++,row2++)
+		 {  
+			 
+			  if(r==(int)size/2)
+			  {
+				  c=size/2+1;
+			  }
+			  else
+			  {
+				  c=0;
+				  col2=col2-size+1;
+			  }
+			    
+			  while(c<size)
+			  {   
+				         
+      			  pSrcAcc->toPixel(std::min(row2,rowSize-1), std::min(col2,colSize-1));
+				  VERIFYNRV(pSrcAcc.isValid());
+				  sampledata[ctr++]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+				  
+				  c++;
+				  col2++;
+				  
+			  
+			  }
+
+		  }
+
+	  
 	  //insertion sort
 	  
 	  int i=0,j=0;
-	  for(i=1;i<9;i++)
+	  for(i=1;i<ctr;i++)
 	  { val=sampledata[i];
 	    j=i-1;
 	    while(j>=0 && sampledata[j]>val)
@@ -99,18 +120,63 @@ namespace
 		sampledata[j+1]=val;
 	  }
 	  
+	  
 	  //median of the entire sample data
-	  median=sampledata[4];
-      *pData = static_cast<T>(median); 
+      int index=ctr/2;
+	  median=sampledata[index];
+	  
+	  zmin=sampledata[0];
+	  zmax=sampledata[ctr-1];
+	  
+	  //storing zxy
+	  pSrcAcc->toPixel(row,col);
+	  VERIFYNRV(pSrcAcc.isValid());
+	  zxy= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  
+	  
+	  if(zmax==median || zmin==median)
+	  {
+		  if(size>=sizeMax)
+		  {
+			*pData = static_cast<T>(zxy); 
+			*flagptr=0;
+			return;
+		  }
+		  else
+		  {
+			 *flagptr=1;
+			 return;
+		  }
+	  }
+
+	 
+     	  
+	  if(zmax==zxy || zmin==zxy)
+	  {
+         *pData = static_cast<T>(median); 
 		
+	  }
+
+	  
+	  else
+	  {
+		  *pData = static_cast<T>(zxy);
+		  
+	  }
 	  
 
+	  *flagptr=0;
    }
 };
 
 
-bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress)
+bool adaptive_median::copyImage4(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress)
 {   
+
+   int flag=0;
+   int size=3;
+   int sizeMax=MAX_SIZE;
+
 	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
 	VERIFY(dRaster != NULL);
@@ -139,16 +205,32 @@ bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int 
    VERIFY(thirdBandDa.isValid());
    VERIFY(pDestAcc.isValid());
    
+   
 
    for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
 
    {
 	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
 	  {	  
+		VERIFY(pDestAcc.isValid());
+		switchOnEncoding(pDesc->getDataType(), adaptivemedian, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
+			pDesc->getRowCount(), pDesc->getColumnCount(), size, sizeMax, pProgress, &flag);
 		
-		switchOnEncoding(pDesc->getDataType(), medianfilter, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
-        pDesc->getRowCount(), pDesc->getColumnCount());
-		pDestAcc->nextColumn();
+		
+		if(flag==1 && size<=sizeMax)
+			{
+				//increase window size
+				size=size+2;
+				curCol--;
+				
+			}
+		
+		else
+			{
+				pDestAcc->nextColumn();
+				size=3;
+				flag=0;
+			}
 	  }
 	        
 	  pDestAcc->nextRow();
@@ -159,26 +241,26 @@ bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int 
 }
 
 
-median_noise::median_noise()
+adaptive_median::adaptive_median()
 {
-   setDescriptorId("{8210FB96-1EE7-495A-A72A-2605BE41629C}");
-   setName("median_noise");
-   setDescription("Perform noise reduction on an image using median filter");
+   setDescriptorId("{FF1EFA03-0888-4199-AB40-0503C9FABC80}");
+   setName("adaptive_median");
+   setDescription("Perform noise reduction on an image using an adaptive median filter");
    setCreator("Pratik Anand");
    setVersion("0.1");
    setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
    setProductionStatus(false);
    setType("Algorithm");
    setSubtype("Noise reduction");
-   setMenuLocation("[Photography]/Median_noise");
+   setMenuLocation("[Photography]/adaptive_median");
    setAbortSupported(false);
 }
 
-median_noise::~median_noise()
+adaptive_median::~adaptive_median()
 {
 }
 
-bool median_noise::getInputSpecification(PlugInArgList*& pInArgList)
+bool adaptive_median::getInputSpecification(PlugInArgList*& pInArgList)
 {
    VERIFY(pInArgList = Service<PlugInManagerServices>()->getPlugInArgList());
    pInArgList->addArg<Progress>(Executable::ProgressArg(), NULL, "Progress reporter");
@@ -186,22 +268,22 @@ bool median_noise::getInputSpecification(PlugInArgList*& pInArgList)
    return true;
 }
 
-bool median_noise::getOutputSpecification(PlugInArgList*& pOutArgList)
+bool adaptive_median::getOutputSpecification(PlugInArgList*& pOutArgList)
 {
    VERIFY(pOutArgList = Service<PlugInManagerServices>()->getPlugInArgList());
    pOutArgList->addArg<RasterElement>("Result", NULL);
    return true;
 }
 
-bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
+bool adaptive_median::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 {
-   StepResource pStep("median", "noise", "5EA0CC75-9E0B-4c3d-BA23-6DB7157BBD55");
+   StepResource pStep("adap_median", "noise", "5EA0CC75-9E0B-4c3d-BA23-6DB7157BBD55");
    if (pInArgList == NULL || pOutArgList == NULL)
    {
       return false;
    }
 
-   std::string msg="Noise reduction by Median filter ";
+   std::string msg="Noise reduction by Adaptive Median filter ";
    Progress* pProgress = pInArgList->getPlugInArgValue<Progress>(Executable::ProgressArg());
    RasterElement* pCube = pInArgList->getPlugInArgValue<RasterElement>(Executable::DataElementArg());
    if (pCube == NULL)
@@ -237,13 +319,13 @@ bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    pProgress->updateProgress(msg, 50, NORMAL);
    
    
-   copyImage3(pCube,dRas,0,pProgress);
+   copyImage4(pCube,dRas,0,pProgress);
    pProgress->updateProgress(msg+"RED complete", 60, NORMAL);
    
-   copyImage3(pCube,dRas,1,pProgress);
+   copyImage4(pCube,dRas,1,pProgress);
    pProgress->updateProgress(msg+"GREEN complete", 70, NORMAL);
    
-   copyImage3(pCube,dRas,2,pProgress);
+   copyImage4(pCube,dRas,2,pProgress);
    pProgress->updateProgress(msg+"BLUE complete", 80, NORMAL);
 
 
@@ -297,10 +379,10 @@ bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
 
    if (pProgress != NULL)
    {
-      pProgress->updateProgress("median_noise is compete.", 100, NORMAL);
+      pProgress->updateProgress("adaptive_median is compete.", 100, NORMAL);
    }
 
-   pOutArgList->setPlugInArgValue("median_noise_Result", pResultCube.release());	//saving data
+   pOutArgList->setPlugInArgValue("adaptive_median_Result", pResultCube.release());	//saving data
 
    pStep->finalize();
    return true;

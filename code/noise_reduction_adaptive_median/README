@@ -1,0 +1,41 @@
+#######################################
+Pratik Anand
+pratik[dot]preet[at]gmail[dot]com
+pratik[at]pratikanand[dot]com
+nick:pratikone
+#######################################
+
+Impulse Noise reduction by Adaptive Median Filter
+-----------------------------------------------------------
+Reducing noise of salt-n-pepper (impulse) types by using Median filter
+
+Algorithm
+for every pixel in the image
+Zmin = minimum gray level value in Sxy
+
+ Zmax = maximum gray level value in Sxy
+
+ Zmed = median of gray levels in Sxy
+
+ Zxy = gray level at coordinates (x, y)
+
+ Smax = maximum allowed size of Sxy
+
+SMax=3 
+
+Level A: A1 = Zmed - Zmin
+         A2 = Zmed - Zmax
+		 if A1 > 0 AND A2 < 0, go to level B
+		 else increase the window size (Smax=Smax+2)
+		 if window size < Smax, repeat level A
+		 else output Zxy
+		 
+Level B: B1 = Zxy - Zmin
+
+		 B2 = Zxy - Zmax
+		 if B1 > 0 AND B2 < 0, output Zxy
+		 else output Zmed
+
+
+
+The resultant image has much of its noise elements removed.
