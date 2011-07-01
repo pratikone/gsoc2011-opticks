@@ -82,14 +82,7 @@ namespace
 			while(c>=0)
 			 {   
 				   
-					//pSrcAcc->toPixel(std::max(row2,0), std::max(col2,0));
-					//VERIFYNRV(pSrcAcc.isValid());
-					//data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-					//d2=(r-(size/2))*(r-(size/2))+(c-(size/2))*(c-(size/2));
-					//weights[r][c]=exp(-(std::max(d2-mul,0))/(h2));
-					
-					
-				    //before-inner1
+					//before-inner1
 				    prow2=row;pcol2=col;	//p
 					qrow2=row2;qcol2=col2;	//q
 					for(pr=csize/2,qr=csize/2;pr>=0 && qr>=0;pr--,qr--,prow2--,qrow2--)
@@ -113,7 +106,7 @@ namespace
 						   {   
 				         	 //p
 							 pSrcAcc->toPixel(std::max(prow2,0), std::max(pcol2,0));
-							// VERIFYNRV(pSrcAcc.isValid());
+							 VERIFYNRV(pSrcAcc.isValid());
 							 p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
 							 //q
 							 pSrcAcc->toPixel(std::max(qrow2,0), std::max(qcol2,0));
@@ -173,7 +166,7 @@ namespace
 						 rtemp=std::max(qrow2,0);
 						 ctemp=std::max(qcol2,0);
 						 pSrcAcc->toPixel(std::min(rtemp,rowSize-1), std::min(ctemp,colSize-1));
-						 //VERIFYNRV(pSrcAcc.isValid());
+						 VERIFYNRV(pSrcAcc.isValid());
 						 q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
 
 						 //result
@@ -226,14 +219,6 @@ namespace
 			    
 			  while(c<size)
 			  {   
-				 /*        
-      			 pSrcAcc->toPixel(std::min(row2,rowSize-1), std::min(col2,colSize-1));
-				 VERIFYNRV(pSrcAcc.isValid());
-				 data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-				 d2=(r-(size/2))*(r-(size/2))+(c-(size/2))*(c-(size/2));
-				 weights[r][c]=exp(-(std::max(d2-mul,0))/(h2));
-				 */
-
 				  //before-inner2
 				  prow2=row;pcol2=col;qrow2=row;qcol2=col2;
 
@@ -374,82 +359,7 @@ namespace
 	  }
 
 
-/*
-	  //search window
 
-	  r=0;c=0;d2=0;
-	  ctr=0;
-	  row2=row;col2=col;
-	  
-	  //before
-	  for(r=searchsize/2;r>=0;r--,row2--)
-		 { 
-			if(r==(int)searchsize/2)
-				   c=searchsize/2;
-			else {
-					c=searchsize-1;
-					col2=col2+searchsize-1;
-				 }
-
-			while(c>=0)
-			 {   
-				  if(r!=row || c!=col)
-					{ 
-						d2=(r-(searchsize/2))*(r-(searchsize/2))+(c-(searchsize/2))*(c-(searchsize/2));
-						sampledata[ctr++]= exp(-(std::max(d2-mul,0))/(h2));
-					}
-				  c--;
-				  col2--;
-			  }
-		  }
-
-	  
-	  
-	  //after
-
-	  row2=row,col2=col+1;
-	  
-	  for(r=searchsize/2;r<searchsize;r++,row2++)
-		 {  
-			 
-			  if(r==(int)searchsize/2)
-			  {
-				  c=searchsize/2+1;
-			  }
-			  else
-			  {
-				  c=0;
-				  col2=col2-searchsize+1;
-			  }
-			    
-			  while(c<searchsize)
-			  {   
-				         
-      			 d2=(r-(searchsize/2))*(r-(searchsize/2))+(c-(searchsize/2))*(c-(searchsize/2));
-				 sampledata[ctr++]= exp(-(std::max(d2-mul,0))/(h2));
-					
-
-				  c++;
-				  col2++;
-				  
-			  
-			  }
-
-		  }
-
-	  
-	  //totalWeight
-	  for(count=0;count<ctr;count++)
-	  {
-		  
-		  totalWeight+=sampledata[count];
-	  }
-
-	  totalWeight+=max;
-	  
-*/  
-	  	  
-	  //normalized value
 	  finalVal=finalVal/totalWeight;
 
    
@@ -525,7 +435,7 @@ nlmean::nlmean()
    setProductionStatus(false);
    setType("Algorithm");
    setSubtype("Noise reduction");
-   setMenuLocation("[Photography]/nlmean");
+   setMenuLocation("[Photography]/nlmeans");
    setAbortSupported(true);
 }
 
