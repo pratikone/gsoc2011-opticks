@@ -12,14 +12,14 @@ Reducing noise of additive white gaussian noise (AWGN) types by using Median fil
 Algorithm
 for every pixel p in the image
 
-wighted means of all the neighbourhood pixels
-are calculated for a 3x3 filter.
+weighted means of all the neighbourhood pixels
+are calculated for a NxN filter.
 
 for every neighbour hood pixel q
 
 Weight= e^(-(d(p,q))^2/h^2)
 
-where d(p,q) is the Euclidean weight between p and q.
+where d(p,q) is the Euclidean weight between p and q using a nxn patch centred respectively at p and q.
 
 
-The resultant image has much of its AWGN noise elements removed.
+The resultant image has much of its AWGN noise elements removed while retaining the image details.
