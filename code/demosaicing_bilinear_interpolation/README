@@ -1,0 +1,18 @@
+#######################################
+Pratik Anand
+pratik[dot]preet[at]gmail[dot]com
+pratik[at]pratikanand[dot]com
+nick:pratikone
+#######################################
+
+Demosaicing of an image by bilinear interpolation
+--------------------------------------------------------------------
+interpolation of pixels to retrieve image from CFA captured from CCD or CMOS digital camera.
+
+Algorithm
+
+Detailed steps of the algorithm can be found here:
+http://www.peter-cockerell.net/Bayer/bayer.html
+
+
+The resultant image has been demosaiced.
