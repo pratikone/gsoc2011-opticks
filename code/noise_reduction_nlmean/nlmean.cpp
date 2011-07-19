@@ -28,6 +28,7 @@
 #include "nlmean.h"
 #include <limits>
 
+
 REGISTER_PLUGIN_BASIC(OpticksTutorial, nlmean);
 
 #define SIGMA 15.0  //standard deviation of noise
@@ -38,7 +39,7 @@ REGISTER_PLUGIN_BASIC(OpticksTutorial, nlmean);
 namespace
 {
    template<typename T>
-   void nonlocalmeans(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize)
+   void nonlocalmeans(T* pData, int row, int col,const int rowSize,const int colSize,double** image)
    {
 	  
 	  //based on noise
@@ -47,13 +48,12 @@ namespace
 	  double h2=h*h;
 	  double totalWeight=0;
 	  double finalVal=0;
-	  double sampledata[1000];
-	  double weights[50][50];
+	  double weights[size][size];
 
 	  double p=0,q=0;
 	  double res=0;
 
-      T data[50][50];
+      T data[size][size];
 	  
 
 	  int mul=2*SIGMA*SIGMA;
@@ -69,7 +69,6 @@ namespace
 	  //value and comparison window
 
 	  //before
-
 	  for(r=size/2;r>=0;r--,row2--)
 		 { 
 			if(r==(int)size/2)
@@ -105,13 +104,16 @@ namespace
 						while(pc>=0 && qc>=0)
 						   {   
 				         	 //p
-							 pSrcAcc->toPixel(std::max(prow2,0), std::max(pcol2,0));
-							 VERIFYNRV(pSrcAcc.isValid());
-							 p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							 //pSrcAcc->toPixel(std::max(prow2,0), std::max(pcol2,0));
+							 //VERIFYNRV(pSrcAcc.isValid());
+							 //p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							   p=image[std::max(prow2,0)][std::max(pcol2,0)];
+
 							 //q
-							 pSrcAcc->toPixel(std::max(qrow2,0), std::max(qcol2,0));
-							 VERIFYNRV(pSrcAcc.isValid());
-							 q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							 //pSrcAcc->toPixel(std::max(qrow2,0), std::max(qcol2,0));
+							 //VERIFYNRV(pSrcAcc.isValid());
+							 //q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							   q=image[std::max(qrow2,0)][std::max(qcol2,0)];
 
 							 //result
 							 res+=(p-q)*(p-q);
@@ -158,17 +160,20 @@ namespace
 				         //p
                          rtemp=std::max(prow2,0);
 						 ctemp=std::max(pcol2,0);
-      					 pSrcAcc->toPixel(std::min(rtemp,rowSize-1), std::min(ctemp,colSize-1));
-						 VERIFYNRV(pSrcAcc.isValid());
-						 p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+      					 
+						 //pSrcAcc->toPixel(std::min(rtemp,rowSize-1), std::min(ctemp,colSize-1));
+						 //VERIFYNRV(pSrcAcc.isValid());
+						 //p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						   p=image[std::min(rtemp,rowSize-1)][std::min(ctemp,colSize-1)];
 
 						 //q
 						 rtemp=std::max(qrow2,0);
 						 ctemp=std::max(qcol2,0);
-						 pSrcAcc->toPixel(std::min(rtemp,rowSize-1), std::min(ctemp,colSize-1));
-						 VERIFYNRV(pSrcAcc.isValid());
-						 q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
 
+						 //pSrcAcc->toPixel(std::min(rtemp,rowSize-1), std::min(ctemp,colSize-1));
+						 //VERIFYNRV(pSrcAcc.isValid());
+						 //q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						   q=image[std::min(rtemp,rowSize-1)][std::min(ctemp,colSize-1)];
 						 //result
 						 res+=(p-q)*(p-q);
 						 
@@ -186,10 +191,10 @@ namespace
 					d2=res/(csize*csize);		//d2
 					weights[r][c]=exp(-(std::max(d2-mul,0))/(h2));
 
-					pSrcAcc->toPixel(std::max(row2,0), std::max(col2,0));
-					VERIFYNRV(pSrcAcc.isValid());
-					data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
+					//pSrcAcc->toPixel(std::max(row2,0), std::max(col2,0));
+					//VERIFYNRV(pSrcAcc.isValid());
+					//data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+					  data[r][c]=image[std::max(row2,0)][std::max(col2,0)];
 					c--;
 				    col2--;
 					
@@ -244,17 +249,18 @@ namespace
 				         	 //p
 							 rtemp=std::min(prow2,rowSize);
 							 ctemp=std::min(pcol2,colSize);
-							 pSrcAcc->toPixel(std::max(rtemp,0), std::max(ctemp,0));
-							 VERIFYNRV(pSrcAcc.isValid());
-							 p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-							 
+							 //pSrcAcc->toPixel(std::max(rtemp,0), std::max(ctemp,0));
+							 //VERIFYNRV(pSrcAcc.isValid());
+							 //p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							   p=image[std::max(rtemp,0)][std::max(ctemp,0)];
+
 							 //q
 							 rtemp=std::min(qrow2,rowSize);
 							 ctemp=std::min(qcol2,colSize);
-							 pSrcAcc->toPixel(std::max(rtemp,0), std::max(ctemp,0));
-							 VERIFYNRV(pSrcAcc.isValid());
-							 q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
+							 //pSrcAcc->toPixel(std::max(rtemp,0), std::max(ctemp,0));
+							 //VERIFYNRV(pSrcAcc.isValid());
+							 //q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+							   q=image[std::max(rtemp,0)][std::max(ctemp,0)];
 							 //result
 							 res+=(p-q)*(p-q);
 							 
@@ -298,14 +304,16 @@ namespace
 					  while(pc<csize && qc<csize)
 					  {   
 				         //p
-						 pSrcAcc->toPixel(std::min(prow2,rowSize-1), std::min(pcol2,colSize-1));
-						 VERIFYNRV(pSrcAcc.isValid());
-						 p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						 //pSrcAcc->toPixel(std::min(prow2,rowSize-1), std::min(pcol2,colSize-1));
+						 //VERIFYNRV(pSrcAcc.isValid());
+						 //p= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						   p=image[std::min(prow2,rowSize-1)][std::min(pcol2,colSize-1)];
 
 						 //q
-						 pSrcAcc->toPixel(std::min(qrow2,rowSize-1), std::min(qcol2,colSize-1));
-						 VERIFYNRV(pSrcAcc.isValid());
-						 q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						 //pSrcAcc->toPixel(std::min(qrow2,rowSize-1), std::min(qcol2,colSize-1));
+						 //VERIFYNRV(pSrcAcc.isValid());
+						 //q= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+						   q=image[std::min(qrow2,rowSize-1)][std::min(qcol2,colSize-1)];
 
 						 //result
 						 res+=(p-q)*(p-q);
@@ -325,9 +333,10 @@ namespace
 					d2=res/(csize*csize);		//d2
 					weights[r][c]=exp(-(std::max(d2-mul,0))/(h2));
 
-					pSrcAcc->toPixel(std::min(row2,rowSize-1), std::min(col2,colSize-1));
-					VERIFYNRV(pSrcAcc.isValid());
-					data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+					//pSrcAcc->toPixel(std::min(row2,rowSize-1), std::min(col2,colSize-1));
+					//VERIFYNRV(pSrcAcc.isValid());
+					//data[r][c]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+					  data[r][c]=image[std::min(row2,rowSize-1)][std::min(col2,colSize-1)];
                   res=0; //reset res
 				  c++;
 				  col2++;
@@ -377,7 +386,13 @@ bool nlmean::standard_deviation(RasterElement *pRaster, RasterElement *dRaster, 
 	RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRaster->getDataDescriptor());
 
 	std::string msg=" ";
-	
+	const unsigned int rowSize=pDesc->getRowCount();
+	const unsigned int colSize=pDesc->getColumnCount();
+	//image array
+	double **image=new double*[rowSize];
+	for(int indx=0;indx<rowSize;++indx)
+		image[indx]=new double[colSize];
+
 	DimensionDescriptor thirdBand = pDesc->getActiveBand(i);   //get active band
 	
    //source
@@ -400,24 +415,48 @@ bool nlmean::standard_deviation(RasterElement *pRaster, RasterElement *dRaster, 
    VERIFY(thirdBandDa.isValid());
    VERIFY(pDestAcc.isValid());
    
-
+   //get image pixel data of band i in 2D array image
    for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
-
    {
 	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
 	  {	  
 		
-		switchOnEncoding(pDesc->getDataType(), nonlocalmeans, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
-         pDesc->getRowCount(), pDesc->getColumnCount());
+		//switchOnEncoding(pDesc->getDataType(), nonlocalmeans, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
+         //pDesc->getRowCount(), pDesc->getColumnCount());
 		
 		//msg="Working on "+StringUtilities::toDisplayString(curRow)+" , "+StringUtilities::toDisplayString(curCol);
 		//pProgress->updateProgress(msg,40,NORMAL);
-		pDestAcc->nextColumn();
+		  
+		  image[curRow][curCol]=thirdBandDa->getColumnAsDouble();
+		  thirdBandDa->nextColumn();
 	  }
-	        
-	  pDestAcc->nextRow();
+	 
+	   thirdBandDa->nextRow();
 
    }
+
+
+   //calculate values
+   for (unsigned int curRow = 0; curRow < pDesc->getRowCount(); ++curRow)
+   {
+	   for (unsigned int curCol = 0; curCol < pDesc->getColumnCount(); ++curCol)
+	  {	  
+		
+		  switchOnEncoding(pDesc->getDataType(), nonlocalmeans, pDestAcc->getColumn(), curRow, curCol,
+           pDesc->getRowCount(), pDesc->getColumnCount(), image);
+		  
+		  pDestAcc->nextColumn();
+	  }
+	 
+	   pDestAcc->nextRow();
+
+   }
+  
+	//deletion
+    for(int indx2=0;indx2<rowSize;++indx2)
+		delete[] image[indx2];
+	delete[] image;
+
    return true;
 
 }
