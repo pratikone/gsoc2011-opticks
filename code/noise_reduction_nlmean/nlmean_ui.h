@@ -26,20 +26,20 @@ public:
    QDoubleSpinBox* ResearchBox;
    QDoubleSpinBox* SigmaValueBox;
 
-   int getCompareValue();
-   int getResearchValue();
+   double getCompareValue();
+   double getResearchValue();
    double getSigmaValue();
 
 
 
 private slots:
-   void setCompareWindow(int t=0);
-   void setResearchWindow(int t=0);
+   void setCompareWindow(double t=0);
+   void setResearchWindow(double t=0);
    void setSigmaValue(double t=0.0);
 
 private:
-	int CompareValue;
-    int ResearchValue;
+	double CompareValue;
+    double ResearchValue;
 	double SigmaValue;
 	
 };

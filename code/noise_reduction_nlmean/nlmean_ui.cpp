@@ -87,12 +87,12 @@ void nlmean_ui::setSigmaValue(double t)
 	SigmaValue = t;
 }
 
-void nlmean_ui::setResearchWindow(int t)
+void nlmean_ui::setResearchWindow(double t)
 {
 	 ResearchValue= t;
 }
 
-void nlmean_ui::setCompareWindow(int t)
+void nlmean_ui::setCompareWindow(double t)
 {
 	CompareValue = t;
 }
@@ -102,12 +102,12 @@ double nlmean_ui::getSigmaValue()
 	return SigmaValue;
 }
 
-int nlmean_ui::getResearchValue()
+double nlmean_ui::getResearchValue()
 {
 	return ResearchValue;
 }
 
-int nlmean_ui::getCompareValue()
+double nlmean_ui::getCompareValue()
 {
 	return CompareValue;
 }

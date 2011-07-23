@@ -1,13 +1,13 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'nlmean_ui.h'
 **
-** Created: Sat Jul 23 22:44:42 2011
+** Created: Sun Jul 24 02:33:30 2011
 **      by: The Qt Meta Object Compiler version 62 (Qt 4.7.3)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "./nlmean_ui.h"
+#include "../nlmean_ui.h"
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'nlmean_ui.h' doesn't include <QObject>."
 #elif Q_MOC_OUTPUT_REVISION != 62
@@ -32,18 +32,18 @@ static const uint qt_meta_data_nlmean_ui[] = {
 
  // slots: signature, parameters, type, tag, flags
       13,   11,   10,   10, 0x08,
-      35,   10,   10,   10, 0x28,
-      54,   11,   10,   10, 0x08,
-      77,   10,   10,   10, 0x28,
-      97,   11,   10,   10, 0x08,
-     119,   10,   10,   10, 0x28,
+      38,   10,   10,   10, 0x28,
+      57,   11,   10,   10, 0x08,
+      83,   10,   10,   10, 0x28,
+     103,   11,   10,   10, 0x08,
+     125,   10,   10,   10, 0x28,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_nlmean_ui[] = {
-    "nlmean_ui\0\0t\0setCompareWindow(int)\0"
-    "setCompareWindow()\0setResearchWindow(int)\0"
+    "nlmean_ui\0\0t\0setCompareWindow(double)\0"
+    "setCompareWindow()\0setResearchWindow(double)\0"
     "setResearchWindow()\0setSigmaValue(double)\0"
     "setSigmaValue()\0"
 };
@@ -77,9 +77,9 @@ int nlmean_ui::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: setCompareWindow((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 0: setCompareWindow((*reinterpret_cast< double(*)>(_a[1]))); break;
         case 1: setCompareWindow(); break;
-        case 2: setResearchWindow((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: setResearchWindow((*reinterpret_cast< double(*)>(_a[1]))); break;
         case 3: setResearchWindow(); break;
         case 4: setSigmaValue((*reinterpret_cast< double(*)>(_a[1]))); break;
         case 5: setSigmaValue(); break;
