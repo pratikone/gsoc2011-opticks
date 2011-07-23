@@ -1,6 +1,6 @@
 /*
  * The information in this file is
- * Copyright(c) 2007 Ball Aerospace & Technologies Corporation
+ * Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>
  * and is subject to the terms and conditions of the
  * GNU Lesser General Public License Version 2.1
  * The license text is available from   
@@ -26,20 +26,19 @@
 #include "StringUtilities.h"
 #include "switchOnEncoding.h"
 #include "nlmean.h"
+#include "nlmean_ui.h"
 #include <limits>
 
 
 REGISTER_PLUGIN_BASIC(OpticksTutorial, nlmean);
 
-#define SIGMA 15.0  //standard deviation of noise
-#define size 17
-#define csize 3
+
 
 
 namespace
 {
    template<typename T>
-   void nonlocalmeans(T* pData, int row, int col,const int rowSize,const int colSize,double** image)
+   void nonlocalmeans(T* pData, int row, int col,const int rowSize,const int colSize,double** image,const double SIGMA,const int size,const int csize)
    {
 	  
 	  //based on noise
@@ -48,12 +47,19 @@ namespace
 	  double h2=h*h;
 	  double totalWeight=0;
 	  double finalVal=0;
-	  double weights[size][size];
+	  
+	  //allocate memory
+	  double **weights=new double*[size];
+	  for(int i=0;i<size;i++)
+		  weights[i]=new double[size];
+	  
 
 	  double p=0,q=0;
 	  double res=0;
-
-      T data[size][size];
+	  
+      T **data=new T*[size];
+	  for(int i=0;i<size;i++)
+		  data[i]=new T[size];
 	  
 
 	  int mul=2*SIGMA*SIGMA;
@@ -373,12 +379,22 @@ namespace
 
    
 	  *pData=static_cast<T>(finalVal);
+
+
+	  //deallocate memory
+	  for(int i=0;i<size;i++)
+		  delete[] weights[i];
+	  delete[] weights;
+
+	  for(int i=0;i<size;i++)
+		  delete[] data[i];
+	  delete[] data;
    
    }
 };
 
 
-bool nlmean::standard_deviation(RasterElement *pRaster, RasterElement *dRaster, int i, Progress *pProgress)
+bool nlmean::standard_deviation(RasterElement *pRaster, RasterElement *dRaster, int i,const double SIGMA,const int size,const int csize, Progress *pProgress)
 {
 	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
@@ -443,7 +459,7 @@ bool nlmean::standard_deviation(RasterElement *pRaster, RasterElement *dRaster, 
 	  {	  
 		
 		  switchOnEncoding(pDesc->getDataType(), nonlocalmeans, pDestAcc->getColumn(), curRow, curCol,
-           pDesc->getRowCount(), pDesc->getColumnCount(), image);
+           pDesc->getRowCount(), pDesc->getColumnCount(), image,SIGMA,size,csize);
 		  
 		  pDestAcc->nextColumn();
 	  }
@@ -520,6 +536,25 @@ bool nlmean::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
 
       return false;
    }
+
+
+   double SIGMA=15.0;  //standard deviation of noise
+   int size=17;
+   int csize=3;
+   
+   //Dialog
+   Service<DesktopServices> pDesktop;
+   
+   nlmean_ui dlg(pDesktop->getMainWidget());
+   int stat=dlg.exec();
+   if (stat == QDialog::Accepted)
+   {
+   
+	 SIGMA = dlg.getSigmaValue();
+	 size = dlg.getResearchValue();
+	 csize = dlg.getCompareValue();
+
+   }
    
    pProgress->updateProgress("Starting calculations", 10, NORMAL);
    std::string msg="Peforming non local mean algorithm";
@@ -533,11 +568,11 @@ bool nlmean::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    pProgress->updateProgress("Starting calculations", 10, NORMAL);
    
    
-   standard_deviation(pCube,dRas, 0, pProgress);
+   standard_deviation(pCube,dRas, 0,SIGMA,size,csize, pProgress);
    pProgress->updateProgress(msg+"RED complete", 60, NORMAL);
-   standard_deviation(pCube,dRas, 1, pProgress);
+   standard_deviation(pCube,dRas, 1,SIGMA,size,csize, pProgress);
    pProgress->updateProgress(msg+"GREEN complete", 70, NORMAL);
-   standard_deviation(pCube,dRas, 2, pProgress);
+   standard_deviation(pCube,dRas, 2,SIGMA,size,csize, pProgress);
    pProgress->updateProgress(msg+"BLUE complete", 80, NORMAL);
 
   
