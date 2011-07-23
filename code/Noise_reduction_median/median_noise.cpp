@@ -25,6 +25,7 @@
 #include "switchOnEncoding.h"
 #include "StringUtilities.h"
 #include "median_noise.h"
+#include "median_noise_ui.h"
 #include <limits>
 
 REGISTER_PLUGIN_BASIC(OpticksTutorial, median_noise);
@@ -32,62 +33,74 @@ REGISTER_PLUGIN_BASIC(OpticksTutorial, median_noise);
 namespace
 {
    template<typename T>
-   void medianfilter(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize)
+   void medianfilter(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize,int size)
    {
-      int prevCol = std::max(col - 1, 0);
-      int prevRow = std::max(row - 1, 0);
-      int nextCol = std::min(col + 1, colSize - 1);
-      int nextRow = std::min(row + 1, rowSize - 1);
-      
+      double* sampledata=new double[size*size];
 	  
-	  
-	  
-	  double sampledata[9];
 	  double val,median=0;
+	  
+	  double zmin=0,zmax=0,zxy=0;
 
-      
-	  pSrcAcc->toPixel(prevRow, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[0]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  int r=0,c=0;
+	  int ctr=0;
+	  int row2=row,col2=col;
+	  
+	  for(r=size/2;r>=0;r--,row2--)
+		 { 
+			if(r==(int)size/2)
+				   c=size/2;
+			else {
+					c=size-1;
+					col2=col2+size-1;
+				 }
 
-      pSrcAcc->toPixel(prevRow, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[1]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+			while(c>=0)
+			 {   
+				  pSrcAcc->toPixel(std::max(row2,0), std::max(col2,0));
+				  VERIFYNRV(pSrcAcc.isValid());
+				  sampledata[ctr++]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+				  
+				  c--;
+				  col2--;
+			  }
+		  }
 
-      pSrcAcc->toPixel(prevRow, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[2] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  
+	  
+	  row2=row,col2=col+1;
 
-      pSrcAcc->toPixel(row, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[3] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
+	  for(r=size/2;r<size;r++,row2++)
+		 {  
+			 
+			  if(r==(int)size/2)
+			  {
+				  c=size/2+1;
+			  }
+			  else
+			  {
+				  c=0;
+				  col2=col2-size+1;
+			  }
+			    
+			  while(c<size)
+			  {   
+				         
+      			  pSrcAcc->toPixel(std::min(row2,rowSize-1), std::min(col2,colSize-1));
+				  VERIFYNRV(pSrcAcc.isValid());
+				  sampledata[ctr++]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
+				  
+				  c++;
+				  col2++;
+				  
+			  
+			  }
 
-	  pSrcAcc->toPixel(row, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[4]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(row, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[5]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, prevCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[6]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, col);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[7]= *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
-      pSrcAcc->toPixel(nextRow, nextCol);
-      VERIFYNRV(pSrcAcc.isValid());
-      sampledata[8] = *reinterpret_cast<T*>(pSrcAcc->getColumn());
-
+		  }
 	  
     
 	  //insertion sort
-	  
 	  int i=0,j=0;
-	  for(i=1;i<9;i++)
+	  for(i=1;i<ctr;i++)
 	  { val=sampledata[i];
 	    j=i-1;
 	    while(j>=0 && sampledata[j]>val)
@@ -100,16 +113,19 @@ namespace
 	  }
 	  
 	  //median of the entire sample data
-	  median=sampledata[4];
+	  median=sampledata[(int)(size*size)/2];
       *pData = static_cast<T>(median); 
 		
 	  
+	
+	delete[] sampledata;
 
+	
    }
 };
 
 
-bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress)
+bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress,const int size)
 {   
 	VERIFY(pRaster != NULL);
 	RasterDataDescriptor* pDesc = dynamic_cast<RasterDataDescriptor*>(pRaster->getDataDescriptor());
@@ -147,7 +163,7 @@ bool median_noise::copyImage3(RasterElement *pRaster,RasterElement *dRaster,int 
 	  {	  
 		
 		switchOnEncoding(pDesc->getDataType(), medianfilter, pDestAcc->getColumn(), thirdBandDa, curRow, curCol,
-        pDesc->getRowCount(), pDesc->getColumnCount());
+        pDesc->getRowCount(), pDesc->getColumnCount(),size);
 		pDestAcc->nextColumn();
 	  }
 	        
@@ -200,6 +216,16 @@ bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    {
       return false;
    }
+   
+   int size;
+
+   Service<DesktopServices> pDesktop;
+   median_noise_ui dlg(pDesktop->getMainWidget());
+   int stat=dlg.exec();
+   if(stat==QDialog::Accepted)
+   {
+	   size=dlg.getResearchValue();
+	   
 
    std::string msg="Noise reduction by Median filter ";
    Progress* pProgress = pInArgList->getPlugInArgValue<Progress>(Executable::ProgressArg());
@@ -237,13 +263,13 @@ bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    pProgress->updateProgress(msg, 50, NORMAL);
    
    
-   copyImage3(pCube,dRas,0,pProgress);
+   copyImage3(pCube,dRas,0,pProgress,size);
    pProgress->updateProgress(msg+"RED complete", 60, NORMAL);
    
-   copyImage3(pCube,dRas,1,pProgress);
+   copyImage3(pCube,dRas,1,pProgress,size);
    pProgress->updateProgress(msg+"GREEN complete", 70, NORMAL);
    
-   copyImage3(pCube,dRas,2,pProgress);
+   copyImage3(pCube,dRas,2,pProgress,size);
    pProgress->updateProgress(msg+"BLUE complete", 80, NORMAL);
 
 
@@ -303,5 +329,8 @@ bool median_noise::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    pOutArgList->setPlugInArgValue("median_noise_Result", pResultCube.release());	//saving data
 
    pStep->finalize();
+
+   }
+
    return true;
 }

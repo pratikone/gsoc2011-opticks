@@ -22,7 +22,7 @@ public:
    virtual bool getOutputSpecification(PlugInArgList*& pOutArgList);
    virtual bool execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList);
 protected:
-	bool copyImage3(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress);
+	bool copyImage3(RasterElement *pRaster,RasterElement *dRaster,int i,Progress* pProgress,int size);
 };
 
 #endif
