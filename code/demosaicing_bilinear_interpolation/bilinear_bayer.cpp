@@ -33,7 +33,7 @@
 //#include<windows.h>
 
 
-REGISTER_PLUGIN_BASIC(OpticksTutorial, bilinear_bayer);
+REGISTER_PLUGIN_BASIC(PhotographyProcessingTools, bilinear_bayer);
 
 
 
@@ -346,14 +346,14 @@ bilinear_bayer::bilinear_bayer()
 {
    setDescriptorId("{77A5FDA5-1C6A-420F-AAEA-98602A38B382}");
    setName("bilinear_bayer");
-   setDescription("Auto white balance on an image");
+   setDescription("Demosaicing on CFA of an image");
    setCreator("Pratik Anand");
    setVersion("0.1");
    setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
-   setProductionStatus(false);
+   setProductionStatus(true);
    setType("Algorithm");
-   setSubtype("White Balance");
-   setMenuLocation("[Photography]/bilinear_bayer");
+   setSubtype("Demosaicing");
+   setMenuLocation("[Photography]/Demosaicing - bilinear interpolation");
    setAbortSupported(false);
 }
 
@@ -491,9 +491,9 @@ bool bilinear_bayer::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgLi
    //new model resource
    RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRas->getDataDescriptor());
    rDesc->setDisplayMode(RGB_MODE);										//enable color mode
-   rDesc->setDisplayBand(RED,pDesc->getActiveBand(0));
-   rDesc->setDisplayBand(GREEN,pDesc->getActiveBand(1));
-   rDesc->setDisplayBand(BLUE,pDesc->getActiveBand(2));
+   rDesc->setDisplayBand(RED,rDesc->getActiveBand(0));
+   rDesc->setDisplayBand(GREEN,rDesc->getActiveBand(1));
+   rDesc->setDisplayBand(BLUE,rDesc->getActiveBand(2));
    ModelResource<RasterElement> pResultCube(dRas);
    
    

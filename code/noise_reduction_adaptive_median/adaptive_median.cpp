@@ -28,7 +28,8 @@
 #include <limits>
 
 
-REGISTER_PLUGIN_BASIC(OpticksTutorial, adaptive_median);
+
+REGISTER_PLUGIN_BASIC(PhotographyProcessingTools, adaptive_median);
 
 #define MAX_SIZE 15
 
@@ -37,13 +38,7 @@ namespace
    template<typename T>
    void adaptivemedian(T* pData, DataAccessor pSrcAcc, int row, int col, int rowSize, int colSize, int size, int sizeMax,Progress* pProgress,int *flagptr)
    {
-      int prevCol = std::max(col - 1, 0);
-      int prevRow = std::max(row - 1, 0);
-      int nextCol = std::min(col + 1, colSize - 1);
-      int nextRow = std::min(row + 1, rowSize - 1);
-      
-	  
-	  double sampledata[625];
+      double sampledata[625];
 	  double val,median=0;
 	  
 	  double zmin=0,zmax=0,zxy=0;
@@ -249,7 +244,7 @@ adaptive_median::adaptive_median()
    setCreator("Pratik Anand");
    setVersion("0.1");
    setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
-   setProductionStatus(false);
+   setProductionStatus(true);
    setType("Algorithm");
    setSubtype("Noise reduction");
    setMenuLocation("[Photography]/adaptive_median");
@@ -333,9 +328,9 @@ bool adaptive_median::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgL
    //new model resource
    RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRas->getDataDescriptor());
    rDesc->setDisplayMode(RGB_MODE);										//enable color mode
-   rDesc->setDisplayBand(RED,pDesc->getActiveBand(0));
-   rDesc->setDisplayBand(GREEN,pDesc->getActiveBand(1));
-   rDesc->setDisplayBand(BLUE,pDesc->getActiveBand(2));
+   rDesc->setDisplayBand(RED,rDesc->getActiveBand(0));
+   rDesc->setDisplayBand(GREEN,rDesc->getActiveBand(1));
+   rDesc->setDisplayBand(BLUE,rDesc->getActiveBand(2));
 
    ModelResource<RasterElement> pResultCube(dRas);
    

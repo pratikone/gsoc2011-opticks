@@ -67,7 +67,7 @@ static const char* const MouseModeIcon2[] =
    "................"
 };
 
-REGISTER_PLUGIN_BASIC(OpticksTutorial, neutralwhite);
+REGISTER_PLUGIN_BASIC(PhotographyProcessingTools, neutralwhite);
 
 
 
@@ -221,7 +221,7 @@ neutralwhite::neutralwhite() :
    //setMenuLocation("[ABC]/neutralwhite");
    
 
-   setProductionStatus(false);
+   setProductionStatus(true);
    allowMultipleInstances(false);
    executeOnStartup(true);
    destroyAfterExecute(false);
@@ -332,7 +332,7 @@ bool neutralwhite::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList
    mouseModePix.setMask(mouseModePix.createHeuristicMask());
    QIcon mouseModeIcon2(mouseModePix);
 
-   mpMouseModeAction3 = new QAction(mouseModeIcon2, "Display Pixel Coordinate 2", this);
+   mpMouseModeAction3 = new QAction(mouseModeIcon2, "Select the neutral reference for white correction", this);
    mpMouseModeAction3->setAutoRepeat(false);
    mpMouseModeAction3->setCheckable(true);
    mpMouseModeAction3->setStatusTip("Select the neutral reference for white correction ");
@@ -591,9 +591,9 @@ bool neutralwhite::eventFilter(QObject* pObject, QEvent* pEvent)
 											//new model resource
 									RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRaster->getDataDescriptor());
 											rDesc->setDisplayMode(RGB_MODE);										//enable color mode
-											rDesc->setDisplayBand(RED,pDescriptor->getActiveBand(0));
-											rDesc->setDisplayBand(GREEN,pDescriptor->getActiveBand(1));
-											rDesc->setDisplayBand(BLUE,pDescriptor->getActiveBand(2));
+											rDesc->setDisplayBand(RED,rDesc->getActiveBand(0));
+											rDesc->setDisplayBand(GREEN,rDesc->getActiveBand(1));
+											rDesc->setDisplayBand(BLUE,rDesc->getActiveBand(2));
 											ModelResource<RasterElement> pResultCube(dRaster);
 										  
 											//create new window

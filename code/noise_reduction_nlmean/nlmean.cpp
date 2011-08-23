@@ -30,7 +30,7 @@
 #include <limits>
 
 
-REGISTER_PLUGIN_BASIC(OpticksTutorial, nlmean);
+REGISTER_PLUGIN_BASIC(PhotographyProcessingTools, nlmean);
 
 
 
@@ -487,11 +487,11 @@ nlmean::nlmean()
 	   " Additive White Gaussian Noise");
    setCreator("Pratik Anand");
    setCopyright("Copyright (C) 2011, Pratik Anand <pratik@pratikanand.com>");
-   setProductionStatus(false);
+   setProductionStatus(true);
    setType("Algorithm");
    setSubtype("Noise reduction");
-   setMenuLocation("[Photography]/nlmeans");
-   setAbortSupported(true);
+   setMenuLocation("[Photography]/nonlocal mean");
+   setAbortSupported(false);
 }
 
 nlmean::~nlmean()
@@ -579,9 +579,9 @@ bool nlmean::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    //new model resource
    RasterDataDescriptor* rDesc = dynamic_cast<RasterDataDescriptor*>(dRas->getDataDescriptor());
    rDesc->setDisplayMode(RGB_MODE);										//enable color mode
-   rDesc->setDisplayBand(RED,pDesc->getActiveBand(0));
-   rDesc->setDisplayBand(GREEN,pDesc->getActiveBand(1));
-   rDesc->setDisplayBand(BLUE,pDesc->getActiveBand(2));
+   rDesc->setDisplayBand(RED,rDesc->getActiveBand(0));
+   rDesc->setDisplayBand(GREEN,rDesc->getActiveBand(1));
+   rDesc->setDisplayBand(BLUE,rDesc->getActiveBand(2));
    ModelResource<RasterElement> pResultCube(dRas);
    
    
@@ -617,6 +617,7 @@ bool nlmean::execute(PlugInArgList* pInArgList, PlugInArgList* pOutArgList)
    
   }
    pOutArgList->setPlugInArgValue("nlmean", pResultCube.release());  //for saving data
+
 
    
 
