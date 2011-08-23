@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="autowhite.cpp" />
+    <ClCompile Include="neutralwhite.cpp" />
+    <ClCompile Include="ModuleManager.cpp" />
+    <ClCompile Include="median_noise.cpp" />
+    <ClCompile Include="adaptive_median.cpp" />
+    <ClCompile Include="nlmean.cpp" />
+    <ClCompile Include="bilinear_bayer.cpp" />
+    <ClCompile Include="nlmean_ui.cpp" />
+    <ClCompile Include="tmp\moc_nlmean_ui.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="median_noise_ui.cpp" />
+    <ClCompile Include="tmp\moc_median_noise_ui.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="autowhite.h" />
+    <ClInclude Include="neutralwhite.h" />
+    <ClInclude Include="median_noise.h" />
+    <ClInclude Include="adaptive_median.h" />
+    <ClInclude Include="nlmean.h" />
+    <ClInclude Include="bilinear_bayer.h" />
+    <ClInclude Include="nlmean_ui.h" />
+    <ClInclude Include="median_noise_ui.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="moc">
+      <UniqueIdentifier>{747f8172-ee43-492b-9c01-be5a6eaff6b3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
